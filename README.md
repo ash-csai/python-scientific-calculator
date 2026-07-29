@@ -83,6 +83,6 @@ gunicorn --bind 0.0.0.0:$PORT wsgi:app
 - The calculator supports both degree and radian mode for trig functions.
 
 ## Author
-Created as a scientific calculator project with a polished web-based interface and deployment-ready configuration.
+ASH | Problem Solver
 
 
