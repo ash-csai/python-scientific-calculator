@@ -1,84 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Scientific Calculator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="calculator-card">
+        <header class="card-header">
+          <div>
+            <p class="eyebrow">Engineering Suite</p>
+            <h1>Scientific Calculator</h1>
+          </div>
+          <div class="header-actions">
+            <button id="angle-toggle" class="pill-button" type="button">DEG</button>
+            <button id="scientific-toggle" class="pill-button" type="button">Sci</button>
+            <button id="theme-toggle" class="icon-button" type="button" aria-label="Switch theme">☀️</button>
+          </div>
+        </header>
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
-</head>
-
-<body>
-    <div class="calculator-container">
-
-        <!-- Display -->
-        <input type="text" id="calculator-display" readonly placeholder="Enter expression...">
-
-        <!-- Keypad -->
-        <div class="button-grid">
-            <!-- Row 1 -->
-            <button class="btn ripple func-btn" data-val="(" onclick="insertValue('(')">(</button>
-            <button class="btn ripple func-btn" data-val=")" onclick="insertValue(')')">)</button>
-            <button class="btn ripple control-btn" data-val="AC" onclick="clearInput()">AC</button>
-            <button class="btn ripple control-btn" data-val="back" onclick="backspace()">⌫</button>
-            
-            <!-- Row 2 -->
-            <button class="btn ripple func-btn" data-val="sin(" onclick="insertValue('sin(')">sin</button>
-            <button class="btn ripple func-btn" data-val="cos(" onclick="insertValue('cos(')">cos</button>
-            <button class="btn ripple func-btn" data-val="tan(" onclick="insertValue('tan(')">tan</button>
-            <button class="btn ripple func-btn" data-val="/" onclick="insertValue('/')">÷</button>
-            
-            <!-- Row 3 -->
-            <button class="btn ripple func-btn" data-val="log(" onclick="insertValue('log(')">log</button>
-            <button class="btn ripple func-btn" data-val="sqrt(" onclick="insertValue('sqrt(')">√</button>
-            <button class="btn ripple func-btn" data-val="^" onclick="insertValue('^')">xʸ</button>
-            <button class="btn ripple func-btn" data-val="*" onclick="insertValue('*')">×</button>
-            
-            <!-- Row 4 -->
-            <button class="btn ripple" data-val="7" onclick="insertValue('7')">7</button>
-            <button class="btn ripple" data-val="8" onclick="insertValue('8')">8</button>
-            <button class="btn ripple" data-val="9" onclick="insertValue('9')">9</button>
-            <button class="btn ripple func-btn" data-val="-" onclick="insertValue('-')">−</button>
-            
-            <!-- Row 5 -->
-            <button class="btn ripple" data-val="4" onclick="insertValue('4')">4</button>
-            <button class="btn ripple" data-val="5" onclick="insertValue('5')">5</button>
-            <button class="btn ripple" data-val="6" onclick="insertValue('6')">6</button>
-            <button class="btn ripple func-btn" data-val="+" onclick="insertValue('+')">+</button>
-            
-            <!-- Row 6 -->
-            <button class="btn ripple" data-val="1" onclick="insertValue('1')">1</button>
-            <button class="btn ripple" data-val="2" onclick="insertValue('2')">2</button>
-            <button class="btn ripple" data-val="3" onclick="insertValue('3')">3</button>
-            <button class="btn ripple func-btn" data-val="=" onclick="calculate()">=</button>
-            
-            <!-- Row 7 -->
-            <button class="btn ripple zero" data-val="0" onclick="insertValue('0')">0</button>
-            <button class="btn ripple" data-val="." onclick="insertValue('.')">.</button>
+        <div class="display-panel">
+          <div id="expression-preview" class="expression-preview">0</div>
+          <input id="calculator-display" class="display-input" type="text" inputmode="decimal" spellcheck="false" autocomplete="off" placeholder="0" />
         </div>
 
-        <!-- Theme Toggle Button -->
-        <button id="theme-toggle" title="Toggle Dark / Light Theme">🌙</button>
+        <section class="scientific-panel" id="scientific-panel">
+          <button class="scientific-btn" type="button" data-action="insert" data-value="sin(">sin</button>
+          <button class="scientific-btn" type="button" data-action="insert" data-value="cos(">cos</button>
+          <button class="scientific-btn" type="button" data-action="insert" data-value="tan(">tan</button>
+          <button class="scientific-btn" type="button" data-action="insert" data-value="log(">log</button>
+          <button class="scientific-btn" type="button" data-action="insert" data-value="ln(">ln</button>
+          <button class="scientific-btn" type="button" data-action="insert" data-value="sqrt(">√</button>
+          <button class="scientific-btn" type="button" data-action="insert" data-value="cbrt(">∛</button>
+          <button class="scientific-btn" type="button" data-action="insert" data-value="abs(">|x|</button>
+          <button class="scientific-btn" type="button" data-action="insert" data-value="pi">π</button>
+          <button class="scientific-btn" type="button" data-action="insert" data-value="e">e</button>
+          <button class="scientific-btn" type="button" data-action="insert" data-value="!">x!</button>
+          <button class="scientific-btn" type="button" data-action="insert" data-value="^">xʸ</button>
+        </section>
 
-        <!-- History Section -->
-        <div class="history-box">
-            <div class="history-header">
-                <h3>History</h3>
-                <button class="clear-btn ripple" onclick="clearHistory()">Clear</button>
-            </div>
-            <ul id="history-list">
-                <!-- JS will dynamically populate history items here -->
-            </ul>
-        </div>
-    </div>
+        <section class="button-grid" id="button-grid">
+          <button class="btn utility" type="button" data-action="clear">AC</button>
+          <button class="btn utility" type="button" data-action="toggle-sign">±</button>
+          <button class="btn utility" type="button" data-action="percent">%</button>
+          <button class="btn operator" type="button" data-action="insert" data-value="/">÷</button>
 
+          <button class="btn scientific" type="button" data-action="memory" data-value="MC">MC</button>
+          <button class="btn scientific" type="button" data-action="memory" data-value="MR">MR</button>
+          <button class="btn scientific" type="button" data-action="memory" data-value="M+">M+</button>
+          <button class="btn operator" type="button" data-action="insert" data-value="*">×</button>
 
-    <!-- JavaScript -->
+          <button class="btn number" type="button" data-action="insert" data-value="7">7</button>
+          <button class="btn number" type="button" data-action="insert" data-value="8">8</button>
+          <button class="btn number" type="button" data-action="insert" data-value="9">9</button>
+          <button class="btn operator" type="button" data-action="insert" data-value="-">−</button>
+
+          <button class="btn number" type="button" data-action="insert" data-value="4">4</button>
+          <button class="btn number" type="button" data-action="insert" data-value="5">5</button>
+          <button class="btn number" data-action="insert" data-value="6">6</button>
+          <button class="btn operator" type="button" data-action="insert" data-value="+">+</button>
+
+          <button class="btn number" type="button" data-action="insert" data-value="1">1</button>
+          <button class="btn number" type="button" data-action="insert" data-value="2">2</button>
+          <button class="btn number" type="button" data-action="insert" data-value="3">3</button>
+          <button class="btn operator evaluate" type="button" data-action="evaluate">=</button>
+
+          <button class="btn number zero" type="button" data-action="insert" data-value="0">0</button>
+          <button class="btn number" type="button" data-action="insert" data-value=".">.</button>
+          <button class="btn utility" type="button" data-action="backspace">⌫</button>
+          <button class="btn operator" type="button" data-action="insert" data-value="(">(</button>
+          <button class="btn operator" type="button" data-action="insert" data-value=")">)</button>
+        </section>
+
+        <section class="history-card">
+          <div class="history-header">
+            <h2>History</h2>
+            <button id="clear-history" class="clear-btn" type="button">Clear</button>
+          </div>
+          <ul id="history-list" class="history-list"></ul>
+        </section>
+      </section>
+    </main>
+
     <script src="{{ url_for('static', filename='scripts/calculator.js') }}"></script>
-
-</body>
+  </body>
 </html>

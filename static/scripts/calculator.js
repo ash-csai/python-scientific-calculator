@@ -1,164 +1,246 @@
-// ----------------------------
-// DOM Elements
-// ----------------------------
 const inputBox = document.getElementById("calculator-display");
-const historyBox = document.getElementById("historyList");
-const body = document.body; // for theme toggle
+const previewBox = document.getElementById("expression-preview");
+const historyList = document.getElementById("history-list");
+const themeToggle = document.getElementById("theme-toggle");
+const angleToggle = document.getElementById("angle-toggle");
+const scientificToggle = document.getElementById("scientific-toggle");
+const clearHistoryButton = document.getElementById("clear-history");
+const body = document.body;
 
-// ----------------------------
-// Core Functions
-// ----------------------------
+let angleMode = "deg";
+let memoryValue = 0;
 
-// Insert value into the input box
-function insertValue(v) {
-    inputBox.value += v;
+function appendValue(value) {
+  const existing = inputBox.value;
+  if (existing === "0" && ![".", "+", "-", "*", "/", "(", ")"].includes(value)) {
+    inputBox.value = value;
+  } else {
+    inputBox.value += value;
+  }
+  syncPreview();
 }
 
-// Clear the input box
 function clearInput() {
-    inputBox.value = "";
+  inputBox.value = "";
+  previewBox.textContent = "0";
 }
 
-// Remove the last character from input (disabled on error)
 function backspace() {
-    if (inputBox.value.startsWith("ERROR:")) return;
-    inputBox.value = inputBox.value.slice(0, -1);
+  inputBox.value = inputBox.value.slice(0, -1);
+  syncPreview();
 }
 
-// Send expression to Flask backend and calculate result
+function toggleSign() {
+  const current = inputBox.value.trim();
+  if (!current) {
+    return;
+  }
+  if (current.startsWith("-")) {
+    inputBox.value = current.slice(1);
+  } else {
+    inputBox.value = `-${current}`;
+  }
+  syncPreview();
+}
+
+function applyPercentage() {
+  const current = inputBox.value.trim();
+  if (!current) {
+    return;
+  }
+  inputBox.value = `(${current})/100`;
+  syncPreview();
+}
+
+function syncPreview() {
+  const value = inputBox.value.trim();
+  previewBox.textContent = value || "0";
+  resizeDisplay();
+}
+
+function resizeDisplay() {
+  const value = inputBox.value || "0";
+  const length = value.length;
+  if (length > 14) {
+    inputBox.style.fontSize = "1.35rem";
+  } else if (length > 10) {
+    inputBox.style.fontSize = "1.6rem";
+  } else {
+    inputBox.style.fontSize = "clamp(1.8rem, 4.4vw, 2.6rem)";
+  }
+}
+
 async function calculate() {
-    if (!inputBox.value) return;
+  const expression = inputBox.value.trim();
+  if (!expression) {
+    return;
+  }
 
-    try {
-        const response = await fetch("/calculate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ expression: inputBox.value }),
-        });
-
-        const data = await response.json();
-        inputBox.value = data.result;
-
-        loadHistory();
-        createRippleEffect(inputBox);
-
-    } catch (err) {
-        console.error("Error calculating:", err);
-        inputBox.value = "ERROR: Could not calculate";
+  try {
+    const response = await fetch("/calculate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ expression, angle_mode: angleMode }),
+    });
+    const data = await response.json();
+    if (!response.ok || data.status === "error") {
+      throw new Error(data.message || "Unable to evaluate expression");
     }
+    inputBox.value = data.display;
+    previewBox.textContent = expression;
+    await loadHistory();
+  } catch (error) {
+    inputBox.value = error.message;
+    previewBox.textContent = "Error";
+  }
 }
 
-// ----------------------------
-// History Functions
-// ----------------------------
-function loadHistory() {
-    fetch("/history")
-    .then(res => res.json())
-    .then(data => {
-        historyBox.innerHTML = "";
+async function loadHistory() {
+  try {
+    const response = await fetch("/history");
+    const data = await response.json();
+    historyList.innerHTML = "";
+    if (!data.length) {
+      const emptyState = document.createElement("li");
+      emptyState.className = "history-item";
+      emptyState.innerHTML = "<strong>No calculations yet</strong><span>Your recent work will appear here.</span>";
+      historyList.appendChild(emptyState);
+      return;
+    }
 
-        data.forEach(item => {
-            const div = document.createElement("div");
-            div.classList.add("history-item");
-            div.innerHTML = `<span>${item.expression} = ${item.result}</span>`;
-            
-            // Click history item to load it into input box
-            div.addEventListener("click", () => {
-                inputBox.value = item.expression;
-            });
-
-            historyBox.appendChild(div);
-        });
-    })
-    .catch(err => console.error("Error loading history:", err));
+    data.forEach((item) => {
+      const row = document.createElement("li");
+      row.className = "history-item";
+      row.innerHTML = `<strong>${item.expression}</strong><span>${item.result}</span>`;
+      row.addEventListener("click", () => {
+        inputBox.value = item.expression;
+        syncPreview();
+      });
+      historyList.appendChild(row);
+    });
+  } catch (error) {
+    console.error("Unable to load history", error);
+  }
 }
 
-function clearHistory() {
-    if (!confirm("Are you sure? This will delete all history.")) return;
-
-    fetch("/clear", { method: "POST" })
-    .then(() => loadHistory())
-    .catch(err => console.error("Error clearing history:", err));
+async function clearHistory() {
+  if (!window.confirm("Clear all history?")) {
+    return;
+  }
+  try {
+    await fetch("/clear", { method: "POST" });
+    await loadHistory();
+  } catch (error) {
+    console.error("Unable to clear history", error);
+  }
 }
 
-// ----------------------------
-// Premium JS Enhancements
-// ----------------------------
-
-// Ripple Effect
-function createRippleEffect(element, event) {
-    const ripple = document.createElement("span");
-    ripple.className = "ripple-effect";
-    element.appendChild(ripple);
-
-    const x = event ? event.offsetX : element.offsetWidth / 2;
-    const y = event ? event.offsetY : element.offsetHeight / 2;
-
-    ripple.style.left = `${x}px`;
-    ripple.style.top = `${y}px`;
-
-    setTimeout(() => ripple.remove(), 600);
+function handleMemory(action) {
+  if (action === "MC") {
+    memoryValue = 0;
+    return;
+  }
+  const current = inputBox.value.trim();
+  if (!current) {
+    return;
+  }
+  const numericValue = Number(current);
+  if (Number.isNaN(numericValue)) {
+    return;
+  }
+  if (action === "MR") {
+    inputBox.value = String(memoryValue);
+  } else if (action === "M+") {
+    memoryValue += numericValue;
+  } else if (action === "M-") {
+    memoryValue -= numericValue;
+  }
+  syncPreview();
 }
 
-// Attach ripple effect to all buttons
-document.querySelectorAll(".btn.ripple").forEach(button => {
-    button.addEventListener("click", (e) => createRippleEffect(button, e));
-});
+function toggleAngleMode() {
+  angleMode = angleMode === "deg" ? "rad" : "deg";
+  angleToggle.textContent = angleMode.toUpperCase();
+}
 
-// ----------------------------
-// Phase 2 Enhancements
-// ----------------------------
-
-// 1. Keyboard Support
-document.addEventListener("keydown", (e) => {
-    const allowedKeys = "0123456789+-*/().";
-    const funcKeys = {
-        "Enter": calculate,
-        "Backspace": backspace,
-        "Delete": clearInput,
-    };
-
-    if (allowedKeys.includes(e.key)) insertValue(e.key);
-    if (funcKeys[e.key]) funcKeys[e.key]();
-});
-
-// 2. Auto-focus Input Box on page load
-window.onload = () => {
-    inputBox.focus();
-    loadHistory();
-    applySavedTheme();
-};
-
-// 3. Dark/Light Theme Toggle
 function toggleTheme() {
-    body.classList.toggle("dark-theme");
-
-    // Save preference in localStorage
-    if (body.classList.contains("dark-theme")) {
-        localStorage.setItem("theme", "dark");
-    } else {
-        localStorage.setItem("theme", "light");
-    }
+  const isLight = body.classList.toggle("light-theme");
+  localStorage.setItem("theme", isLight ? "light" : "dark");
+  themeToggle.textContent = isLight ? "🌙" : "☀️";
 }
 
 function applySavedTheme() {
-    const saved = localStorage.getItem("theme");
-    if (saved === "dark") body.classList.add("dark-theme");
-    else body.classList.remove("dark-theme");
+  const saved = localStorage.getItem("theme");
+  if (saved === "light") {
+    body.classList.add("light-theme");
+    themeToggle.textContent = "🌙";
+  } else {
+    body.classList.remove("light-theme");
+    themeToggle.textContent = "☀️";
+  }
 }
 
-// ----------------------------
-// Dark / Light Theme Toggle
-// ----------------------------
-const themeToggleBtn = document.getElementById("theme-toggle");
+function handleButtonClick(event) {
+  const button = event.target.closest("button");
+  if (!button) {
+    return;
+  }
 
-themeToggleBtn.addEventListener("click", () => {
-    document.body.classList.toggle("dark-theme");
-    
-    // Change icon based on theme
-    if (document.body.classList.contains("dark-theme")) {
-        themeToggleBtn.textContent = "☀️";
-    } else {
-        themeToggleBtn.textContent = "🌙";
-    }
+  const { action, value } = button.dataset;
+  if (action === "insert") {
+    appendValue(value);
+  } else if (action === "clear") {
+    clearInput();
+  } else if (action === "backspace") {
+    backspace();
+  } else if (action === "evaluate") {
+    calculate();
+  } else if (action === "toggle-sign") {
+    toggleSign();
+  } else if (action === "percent") {
+    applyPercentage();
+  } else if (action === "memory") {
+    handleMemory(value);
+  }
+}
+
+document.getElementById("button-grid").addEventListener("click", handleButtonClick);
+document.querySelector(".scientific-panel").addEventListener("click", handleButtonClick);
+
+themeToggle.addEventListener("click", toggleTheme);
+angleToggle.addEventListener("click", toggleAngleMode);
+scientificToggle.addEventListener("click", () => {
+  body.classList.toggle("scientific-hidden");
+});
+clearHistoryButton.addEventListener("click", clearHistory);
+
+inputBox.addEventListener("input", syncPreview);
+inputBox.addEventListener("focus", resizeDisplay);
+
+document.addEventListener("keydown", (event) => {
+  const allowed = /[0-9.+\-*/()]/;
+  if (allowed.test(event.key)) {
+    event.preventDefault();
+    appendValue(event.key);
+  }
+  if (event.key === "Enter") {
+    event.preventDefault();
+    calculate();
+  }
+  if (event.key === "Backspace") {
+    event.preventDefault();
+    backspace();
+  }
+  if (event.key === "Escape") {
+    event.preventDefault();
+    clearInput();
+  }
+});
+
+window.addEventListener("DOMContentLoaded", () => {
+  applySavedTheme();
+  angleToggle.textContent = angleMode.toUpperCase();
+  resizeDisplay();
+  loadHistory();
+  inputBox.focus();
 });

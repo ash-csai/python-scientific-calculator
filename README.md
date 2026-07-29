@@ -1,96 +1,88 @@
 # Scientific Calculator (Python + Flask)
 
-## Project Overview
-This is a **Scientific Calculator Web Application** built with **Python** (backend), **Flask** (web framework), **HTML/CSS/JavaScript** (frontend), and **SQLite** (history management).  
-It supports **basic arithmetic**, **scientific functions** (sin, cos, tan, log, sqrt, factorial, powers), multiple operators in one expression, and maintains a **calculation history**.
-
+## Overview
+This project is a production-ready scientific calculator web app built with Python, Flask, SQLite, HTML, CSS, and JavaScript. It supports arithmetic, scientific functions, keyboard input, and calculation history with a polished iOS-inspired interface.
 
 ## Features
-- **Basic Arithmetic:** Addition, Subtraction, Multiplication, Division, Modulus.
-- **Scientific Functions:** `sin()`, `cos()`, `tan()`, `log()`, `sqrt()`, `x^y`, `factorial()`.
-- **Multiple Operators:** Evaluate complex expressions with proper precedence.
-- **History Management:**  
-  - View full history of calculations.  
-  - Search history by keywords or expressions.  
-  - Clear entire history.  
-- **Responsive UI:** Google Calculator-inspired clean interface with ripple effects, animations, and intuitive buttons.
-- **Error Handling:** Handles division by zero, invalid input, and unknown operators.
+- Basic arithmetic: addition, subtraction, multiplication, division, modulo, and percentage
+- Scientific operations: sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, log, ln, exp, sqrt, cbrt, factorial, absolute value, powers, and constants such as pi and e
+- Responsive UI with scientific controls and a dark/light theme
+- History tracking with click-to-reuse support and clear-history actions
+- Safe evaluation through Python AST parsing, avoiding raw eval usage
+- Structured JSON error handling for API requests
 
-
-## Project Structure
-Scientific-Calculator/
-│
+## Project structure
+```text
+Scientific Calculator_Python/
+├── app.py
+├── wsgi.py
+├── requirements.txt
+├── Procfile
+├── README.md
+├── calculator_history.db
 ├── backend/
-│ ├── calculator_core.py # Python backend: expression evaluation
-│ ├── command_line_interface.py # Python CLI: Integrates Core Calculator + History Manager
-│ └── history_manager.py # Python backend: SQLite history functions
-│
+│   ├── __init__.py
+│   ├── calculator_core.py
+│   ├── calculator_history.db
+│   ├── command_line_interface.py
+│   ├── history_manager.py
+│   └── __pycache__/
 ├── static/
-│ ├── style.css # CSS for calculator UI
-│ └── scripts/
-│ └── calculator.js # JavaScript for frontend interactions
-│
+│   ├── scripts/
+│   │   └── calculator.js
+│   └── style.css
 ├── templates/
-│ └── index.html # HTML frontend
-│
-├── app.py # Flask main application
-└── README.md # Project documentation
+│   └── index.html
+├── tests/
+│   └── test_calculator_core.py
+└── __pycache__/
+```
 
+## Local development
+### 1. Prerequisites
+- Python 3.10+
+- pip
+- A browser
 
-## Setup Instructions
+### 2. Install dependencies
+```bash
+python -m pip install -r requirements.txt
+```
 
-### Prerequisites
-- Python 3.x
-- Flask
-- SQLite (built-in with Python)
-- Web browser (Chrome, Firefox, Edge, etc.)
-
-### Installation
-1. **Clone the repository:**
-```bash```
-git clone <repository-url>
-cd Scientific-Calculator
-
-2. **Install dependencies:**
-pip install flask
-
-3. **Run the Flask application:**
+### 3. Run the app locally
+```bash
 python app.py
+```
 
-4. **Open the application in your browser:**
+Then open:
+```text
 http://127.0.0.1:5000/
+```
 
+## Production deployment
+### Gunicorn
+The app is ready to run behind Gunicorn:
+```bash
+gunicorn --bind 0.0.0.0:$PORT wsgi:app
+```
 
-### Usage
-1. Enter expressions using the calculator buttons or keyboard.
-2. Press = to evaluate the expression.
-3. View previous calculations in the History panel.
-4. Search for a past calculation or clear all history using the respective buttons.
+### Platform examples
+- Render: set the start command to `gunicorn --bind 0.0.0.0:$PORT wsgi:app`
+- Heroku: the included Procfile will start the app automatically
+- Any container-based platform: expose port `5000` or use the `PORT` environment variable
 
-**Example Expressions:**
-5 + 7 * 2
-sin(45)
-log(100)
-sqrt(144)
-5^3
-factorial(6)
+## API endpoints
+- `GET /health` returns service health
+- `POST /calculate` evaluates an expression and stores it in history
+- `GET /history` returns past calculations
+- `POST /clear` clears history
 
+## Notes
+- History is stored in a SQLite file at the project root.
+- Invalid input returns structured API errors instead of crashing the UI.
+- The calculator supports both degree and radian mode for trig functions.
 
-### Notes
-1. Expressions support nested parentheses and follow operator precedence.
-2. History is stored in a local SQLite database calculator_history.db.
-3. Any invalid operation (like division by zero) will show a clear error message.
-
-### Future Enhancements
-1. Add user authentication for multiple users.
-2. Export history as CSV or PDF.
-3. Implement themes for UI customization.
-4. Add graphing features for functions.
-
-### Authors
-Palak Malik (ASH) & Charvi Pundir
-School Computer Science Project | Backend & Frontend Developer
-
-
+## Author
+Created as a scientific calculator project with a polished web-based interface and deployment-ready configuration.
 
 
