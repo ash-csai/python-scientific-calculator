@@ -81,6 +81,10 @@ gunicorn --bind 0.0.0.0:$PORT wsgi:app
 - History is stored in a SQLite file at the project root.
 - Invalid input returns structured API errors instead of crashing the UI.
 - The calculator supports both degree and radian mode for trig functions.
+- Runtime SQLite database files such as `calculator_history.db` are ignored by git.
+
+## License
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 ## Author
 ASH | Problem Solver
