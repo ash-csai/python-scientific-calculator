@@ -125,6 +125,8 @@ def _evaluate_node(node: ast.AST, angle_mode: str) -> float:
                 raise CalculatorError("Square root of a negative number is undefined")
             return math.sqrt(value)
         if func_name == "cbrt":
+            if value < 0:
+                return -abs(value) ** (1 / 3)
             return value ** (1 / 3)
         if func_name == "abs":
             return abs(value)
@@ -132,8 +134,6 @@ def _evaluate_node(node: ast.AST, angle_mode: str) -> float:
             if value < 0 or not float(value).is_integer():
                 raise CalculatorError("Factorial requires a non-negative integer")
             return float(math.factorial(int(value)))
-        if func_name == "pow":
-            return value
         raise CalculatorError(f"Unsupported function: {func_name}")
 
     raise CalculatorError("Unsupported expression")
@@ -149,11 +149,10 @@ def evaluate_expression(expression: str, angle_mode: str = "deg") -> float | int
 
     try:
         result = _evaluate_node(tree, angle_mode)
+        return _round_result(result)
     except ZeroDivisionError as exc:
         raise CalculatorError("Division by zero") from exc
     except CalculatorError:
         raise
     except Exception as exc:
         raise CalculatorError("Unable to evaluate that expression") from exc
-
-    return _round_result(result)
