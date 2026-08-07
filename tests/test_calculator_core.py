@@ -5,7 +5,7 @@ import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from backend.calculator_core import evaluate_expression
+from backend.calculator_core import CalculatorError, evaluate_expression
 from backend.history_manager import init_db, add_history, get_all_history, clear_history
 
 
@@ -34,6 +34,27 @@ class CalculatorCoreTests(unittest.TestCase):
             self.assertEqual(rows[0][1], "1+1")
             clear_history(db_path=db_path)
             self.assertEqual(len(get_all_history(db_path=db_path)), 0)
+
+
+class CalculatorCoreErrorPathTests(unittest.TestCase):
+    def test_domain_errors_raise_calculator_error(self):
+        for expr in ["sqrt(-1)", "ln(-1)", "log(-1)", "log(0)"]:
+            with self.subTest(expr=expr):
+                with self.assertRaises(CalculatorError):
+                    evaluate_expression(expr)
+
+    def test_negative_cbrt_returns_real_value(self):
+        self.assertEqual(evaluate_expression("cbrt(-1)"), -1)
+
+    def test_division_by_zero_raises_calculator_error(self):
+        with self.assertRaises(CalculatorError):
+            evaluate_expression("1/0")
+
+    def test_malformed_syntax_raises_calculator_error(self):
+        for expr in ["2 + * 3", "sin(", "2 + (3"]:
+            with self.subTest(expr=expr):
+                with self.assertRaises(CalculatorError):
+                    evaluate_expression(expr)
 
 
 if __name__ == "__main__":
